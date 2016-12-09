@@ -37,6 +37,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -189,11 +190,13 @@ public class DevServerRule extends ExternalResource {
             });
             long waitStart = System.currentTimeMillis();
             ExecutorService outputReadingExecutor = Executors.newSingleThreadExecutor();
+            final AtomicInteger lineCounter = new AtomicInteger(0);
             Future<Boolean> future = outputReadingExecutor.submit(new Callable<Boolean>(){
                 @Override
                 public Boolean call() throws Exception {
                     String line;
                     while ((line = devLogReader.readLine()) != null) {
+                        lineCounter.incrementAndGet();
                         if (readinessListener.consumeLine(line)) {
                             devLogReader.close();
                             outputPiper.disable();
@@ -208,7 +211,7 @@ public class DevServerRule extends ExternalResource {
             try {
                 becameReady = future.get(getReadinessWaitingDurationMs(), TimeUnit.MILLISECONDS);
             } catch (ExecutionException e) {
-                log.log(Level.SEVERE, "reader thread failed", e);
+                log.log(Level.SEVERE, "ExecutionException after reading " + lineCounter.get() + " lines from devserver log output on separate thread", e.getCause());
             } catch (TimeoutException e) {
                 future.cancel(true);
             }
