@@ -18,5 +18,5 @@ set -x
 # Set pipefail so that `egrep` does not eat the exit code.
 set -o pipefail
 
-mvn --batch-mode clean verify | egrep -v "(^\[INFO\] Download|^\[INFO\].*skipping)"
+mvn --batch-mode clean verify -Dhttprequestecho.gcloud.directory=${PWD}/google-cloud-sdk | egrep -v "(^\[INFO\] Download|^\[INFO\].*skipping)"
 
