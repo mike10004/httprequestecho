@@ -152,14 +152,19 @@ public class DevServerRule extends ExternalResource {
         boolean consumeLine( String line );
     }
 
-    @Override
-    protected synchronized void before() throws NeverBecameReadyException, IOException, InterruptedException {
-        final DevServerReadinessListener readinessListener = new ReadyListener();
+    protected MyProgramBuilder buildRunProgram() {
         MyProgramBuilder builder = new MyProgramBuilder("mvn");
         builder.from(cwd);
         builder.args("gcloud:run", "-DskipTests=true");
         builder.arg(webServerHostArg(port));
         builder.arg(adminHostArg(adminPort));
+        return builder;
+    }
+
+    @Override
+    protected synchronized void before() throws NeverBecameReadyException, IOException, InterruptedException {
+        final DevServerReadinessListener readinessListener = new ReadyListener();
+        MyProgramBuilder builder = buildRunProgram();
         File stdoutFile = constructStdoutFilePathname(), stderrFile = constructStderrFilePathname();
         try (final PipedOutputStream devLogOut = new PipedOutputStream()) {
             final CopyingOutputStreamEcho outputPiper = new CopyingOutputStreamEcho(devLogOut);
@@ -330,12 +335,16 @@ public class DevServerRule extends ExternalResource {
         }
     }
 
-    protected boolean stop() {
-        ProgramWithOutputStrings program = Program.running("mvn")
+    protected Program.Builder buildStopProgram() {
+        return Program.running("mvn")
                 .from(cwd)
                 .args("gcloud:run_stop")
                 .args(webServerHostArg(port))
-                .args(adminHostArg(adminPort))
+                .args(adminHostArg(adminPort));
+    }
+
+    protected boolean stop() {
+        ProgramWithOutputStrings program = buildStopProgram()
                 .outputToStrings();
         ProgramWithOutputStringsResult result = program.execute();
         if (result.getExitCode() != 0) {
