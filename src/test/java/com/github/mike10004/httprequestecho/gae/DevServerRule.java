@@ -9,6 +9,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Stopwatch;
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
+import com.google.common.io.Files;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -160,8 +161,7 @@ public class DevServerRule extends ExternalResource {
         builder.arg(webServerHostArg(port));
         builder.arg(adminHostArg(adminPort));
         File stdoutFile = constructStdoutFilePathname(), stderrFile = constructStderrFilePathname();
-        try (final PipedOutputStream devLogOut = new PipedOutputStream();
-             final BufferedReader devLogReader = new BufferedReader(new InputStreamReader(new PipedInputStream(devLogOut), outputCharset))) {
+        try (final PipedOutputStream devLogOut = new PipedOutputStream()) {
             final CopyingOutputStreamEcho outputPiper = new CopyingOutputStreamEcho(devLogOut);
             ProgramWithOutput<?> program = builder.outputToFilesWithEchos(stdoutFile, stderrFile, outputPiper, null);
             state.set(ProgState.STARTED);
@@ -193,17 +193,19 @@ public class DevServerRule extends ExternalResource {
             final AtomicInteger lineCounter = new AtomicInteger(0);
             Future<Boolean> future = outputReadingExecutor.submit(new Callable<Boolean>(){
                 @Override
-                public Boolean call() throws Exception {
-                    String line;
-                    while ((line = devLogReader.readLine()) != null) {
-                        lineCounter.incrementAndGet();
-                        if (readinessListener.consumeLine(line)) {
-                            devLogReader.close();
-                            outputPiper.disable();
-                            return true;
+                public Boolean call() {
+                    try (final BufferedReader devLogReader = new BufferedReader(new InputStreamReader(new PipedInputStream(devLogOut), outputCharset))) {
+                        String line;
+                        while ((line = devLogReader.readLine()) != null) {
+                            lineCounter.incrementAndGet();
+                            if (readinessListener.consumeLine(line)) {
+                                outputPiper.disable();
+                                return true;
+                            }
                         }
+                    } catch (IOException e) {
+                        log.log(Level.SEVERE, "reading from pipe failed: {0}", (Object) e);
                     }
-                    devLogReader.close();
                     return false;
                 }
             });
@@ -223,6 +225,11 @@ public class DevServerRule extends ExternalResource {
             outputReadingExecutor.shutdownNow();
         }
         if (state.get() != ProgState.READY) {
+            try {
+                Files.asByteSource(stdoutFile).copyTo(System.err);
+            } catch (IOException e) {
+                System.err.println("could not read from stdout file " + stdoutFile + " due to " + e);
+            }
             throw new NeverBecameReadyException();
         }
     }
@@ -310,6 +317,7 @@ public class DevServerRule extends ExternalResource {
     @Override
     protected synchronized void after() {
         if (resultFuture != null) {
+            log.log(Level.FINER, "cleaning up; current state = {0}", state.get());
             boolean clean = stop();
             if (!clean) {
                 kill();

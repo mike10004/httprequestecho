@@ -228,6 +228,7 @@
                     <systemPropertyVariables>
                         <dev.server.port>${dev.server.port}</dev.server.port>
                         <dev.admin.port>8000</dev.admin.port>
+                        <java.util.logging.config.file>${project.build.testOutputDirectory}/logging.properties</java.util.logging.config.file>
                     </systemPropertyVariables>
                 </configuration>
                 <executions>
