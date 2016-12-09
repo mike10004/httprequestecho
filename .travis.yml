@@ -22,6 +22,8 @@ jdk:
 before_install:
   - which gcloud || true
   - dpkg-query -L google-cloud-sdk
+  - sudo mkdir -p /usr/local/share/google
+  - sudo ln -s /usr/lib/google-cloud-sdk /usr/local/share/google/google-cloud-sdk
 # Skip the install step, since Maven will download the dependencies we need
 # when the test build runs.
 # http://stackoverflow.com/q/31945809/101923
