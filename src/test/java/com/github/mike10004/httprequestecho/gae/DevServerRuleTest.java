@@ -1,6 +1,6 @@
-package com.github.mike10004.httprequestecho;
+package com.github.mike10004.httprequestecho.gae;
 
-import com.github.mike10004.httprequestecho.DevServerRule.ReadyListener;
+import com.github.mike10004.httprequestecho.gae.DevServerRule.ReadyListener;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
