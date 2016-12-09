@@ -12,13 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 sudo: required
+addons:
+  apt:
+    packages:
+    - google-cloud-sdk
 language: java
 jdk:
   - oraclejdk8
 before_install:
   - sudo mkdir -p /usr/local/share/google
-  - wget https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-sdk-137.0.1-linux-x86_64.tar.gz
-  - sudo tar --directory /usr/local/share/google --extract -f google-cloud-sdk-137.0.1-linux-x86_64.tar.gz
+  - sudo ln -sv /usr/lib/google-cloud-sdk /usr/local/share/google/google-cloud-sdk
+  - sudo gcloud components install app-engine-python
+  - sudo gcloud components install app-engine-java
 # Skip the install step, since Maven will download the dependencies we need
 # when the test build runs.
 # http://stackoverflow.com/q/31945809/101923
