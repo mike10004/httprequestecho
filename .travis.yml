@@ -11,7 +11,10 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+addons:
+  apt:
+    packages:
+    - google-cloud-sdk
 language: java
 jdk:
   - oraclejdk8
@@ -19,9 +22,6 @@ jdk:
 # when the test build runs.
 # http://stackoverflow.com/q/31945809/101923
 # https://docs.travis-ci.com/user/customizing-the-build/#Skipping-the-Installation-Step
-before_install:
-  - wget https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-sdk-137.0.1-linux-x86_64.tar.gz
-  - tar xf google-cloud-sdk-137.0.1-linux-x86_64.tar.gz
 install: true
 script: ./travis.sh
 after_success:
