@@ -5,6 +5,7 @@ import com.github.mike10004.nativehelper.ProgramWithOutput;
 import com.github.mike10004.nativehelper.ProgramWithOutputFiles;
 import com.github.mike10004.nativehelper.ProgramWithOutputStrings;
 import com.github.mike10004.nativehelper.ProgramWithOutputStringsResult;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Stopwatch;
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
@@ -47,6 +48,9 @@ import static com.google.common.base.Preconditions.checkNotNull;
 @SuppressWarnings("AppEngineForbiddenCode")
 public class DevServerRule extends ExternalResource {
 
+    private static final int DEFAULT_PORT = 8080;
+    private static final int DEFAULT_ADMIN_PORT = 8000;
+
     private static final Logger log = Logger.getLogger(DevServerRule.class.getName());
     private static final File cwd = new File(System.getProperty("user.dir"));
 
@@ -60,10 +64,8 @@ public class DevServerRule extends ExternalResource {
         NOT_STARTED, STARTED, READY, FINISHED;
     }
 
-    private static final int NUM_THREADS = 2; // one for `mvn gcloud:run`, one for output reader
-
     public DevServerRule() {
-        this(MoreExecutors.listeningDecorator(Executors.newFixedThreadPool(NUM_THREADS)), true, DEFAULT_PORT, DEFAULT_ADMIN_PORT);
+        this(MoreExecutors.listeningDecorator(Executors.newSingleThreadExecutor()), true, DEFAULT_PORT, DEFAULT_ADMIN_PORT);
     }
 
     @SuppressWarnings("SameParameterValue")
@@ -89,22 +91,17 @@ public class DevServerRule extends ExternalResource {
         return new DevServerRule(portSupplier.get(), adminPortSupplier.get());
     }
 
-    private static final int DEFAULT_PORT = 8080;
-    private static final int DEFAULT_ADMIN_PORT = 8000;
-
-    public int getPort() {
-        return port;
-    }
-
     public DevServerRule(int port) {
         this(port, DEFAULT_ADMIN_PORT);
     }
 
+    @VisibleForTesting
     DevServerRule(int port, int adminPort) {
         this(MoreExecutors.listeningDecorator(Executors.newSingleThreadExecutor()), true, port, adminPort);
     }
 
-    public DevServerRule(ListeningExecutorService executorService) {
+    @VisibleForTesting
+    DevServerRule(ListeningExecutorService executorService) {
         this(executorService, false, DEFAULT_PORT, DEFAULT_ADMIN_PORT);
     }
 
@@ -117,6 +114,14 @@ public class DevServerRule extends ExternalResource {
         if (adminPort != DEFAULT_ADMIN_PORT) {
             throw new IllegalArgumentException("specifying port for admin_host is not yet supported; you must use " + DEFAULT_ADMIN_PORT);
         }
+    }
+
+    public int getPort() {
+        return port;
+    }
+
+    public int getAdminPort() {
+        return adminPort;
     }
 
     protected class ReadyListener implements DevServerReadinessListener {
