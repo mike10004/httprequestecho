@@ -21,12 +21,10 @@ import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.ListMultimap;
 
-import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.PathSegment;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
-
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URLDecoder;
@@ -36,8 +34,9 @@ import java.util.Map;
 import static io.airlift.airship.shared.MockUriInfo.GuavaMultivaluedMap.createGuavaMultivaluedMap;
 import static io.airlift.airship.shared.MockUriInfo.GuavaMultivaluedMap.emptyMultivaluedMap;
 
-public class MockUriInfo
-        implements UriInfo {
+
+@SuppressWarnings({"BooleanParameter", "unused"})
+public class MockUriInfo implements UriInfo {
 
     private static final Splitter PATH_SPLITTER = Splitter.on('/');
     private static final Splitter QUERY_STRING_SPLITTER = Splitter.on('&').trimResults().omitEmptyStrings();
@@ -205,11 +204,11 @@ public class MockUriInfo
         private final ListMultimap<K, V> multimap;
 
         static <K, V> GuavaMultivaluedMap<K, V> emptyMultivaluedMap() {
-            return new GuavaMultivaluedMap<K, V>(ImmutableListMultimap.<K, V>of());
+            return new GuavaMultivaluedMap<>(ImmutableListMultimap.<K, V>of());
         }
 
         static <K, V> GuavaMultivaluedMap<K, V> createGuavaMultivaluedMap(ListMultimap<K, V> multimap) {
-            return new GuavaMultivaluedMap<K, V>(multimap);
+            return new GuavaMultivaluedMap<>(multimap);
         }
 
         private GuavaMultivaluedMap(ListMultimap<K, V> multimap) {
