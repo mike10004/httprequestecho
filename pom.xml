@@ -22,7 +22,7 @@
 
     <properties>
         <httprequestecho.project.id>your-project-id-here</httprequestecho.project.id>
-        <appengine.app.version>3</appengine.app.version>
+        <appengine.app.version>4</appengine.app.version>
         <appengine.target.version>1.9.44</appengine.target.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
@@ -78,12 +78,6 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>org.mockito</groupId>
-            <artifactId>mockito-all</artifactId>
-            <version>1.10.19</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
             <groupId>com.google.appengine</groupId>
             <artifactId>appengine-testing</artifactId>
             <version>${appengine.target.version}</version>
@@ -116,6 +110,28 @@
             <groupId>com.github.mike10004</groupId>
             <artifactId>native-helper</artifactId>
             <version>5.1.0</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+            <version>3.5</version>
+        </dependency>
+        <dependency>
+            <groupId>com.google.code.findbugs</groupId>
+            <artifactId>jsr305</artifactId>
+            <version>3.0.1</version>
+        </dependency>
+        <dependency>
+            <groupId>com.github.tomakehurst</groupId>
+            <artifactId>wiremock</artifactId>
+            <version>1.58</version> <!-- can't upgrade version because newer WireMock uses Jetty 9 and GAE uses Jetty 6 -->
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-jdk14</artifactId>
+            <version>1.7.12</version>
             <scope>test</scope>
         </dependency>
 
@@ -210,7 +226,6 @@
                 <executions>
                     <execution>
                         <id>reserve-dev-server-port</id>
-                        <!--<phase>pre-integration-test</phase>-->
                         <goals>
                             <goal>reserve-network-port</goal>
                         </goals>
@@ -227,6 +242,7 @@
                 <configuration>
                     <systemPropertyVariables>
                         <dev.server.port>${dev.server.port}</dev.server.port>
+                        <dev.admin.port>8000</dev.admin.port>
                     </systemPropertyVariables>
                 </configuration>
                 <executions>

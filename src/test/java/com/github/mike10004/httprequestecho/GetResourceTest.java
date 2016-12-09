@@ -1,6 +1,5 @@
 package com.github.mike10004.httprequestecho;
 
-import com.google.common.net.HttpHeaders;
 import io.airlift.airship.shared.MockUriInfo;
 import org.easymock.EasyMock;
 import org.junit.Test;
@@ -10,23 +9,27 @@ import javax.ws.rs.core.Cookie;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.core.Response;
 import java.net.URI;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-public class ApiResourceTest {
+import static org.junit.Assert.assertEquals;
+
+public class GetResourceTest {
 
     @Test
     public void get() throws Exception {
         MockUriInfo uriInfo = new MockUriInfo(URI.create("https://www.example.com/path/to/something?foo=bar&foo=baz&gaw=knee"));
         MultivaluedMap<String, String> headersMap = new MultivaluedHashMap<>();
-        headersMap.putSingle(HttpHeaders.COOKIE, "[hello=world]");
-        String json = new ApiResource(EasyMock.createMock(ServletContext.class)).get(uriInfo, new FakeHttpHeaders(headersMap));
+        headersMap.putSingle("User-Agent", "fakey mcFakeson");
+        Response response = new GetResource(EasyMock.createMock(ServletContext.class))
+                .get(uriInfo, new FakeHttpHeaders(headersMap));
+        String json = (String) response.getEntity();
         System.out.println(json);
     }
-
 
     private static class FakeHttpHeaders implements javax.ws.rs.core.HttpHeaders {
 
