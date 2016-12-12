@@ -161,11 +161,14 @@ public class DevServerRule extends ExternalResource {
         return builder;
     }
 
+    private File stdoutFile, stderrFile;
+
     @Override
     protected synchronized void before() throws NeverBecameReadyException, IOException, InterruptedException {
         final DevServerReadinessListener readinessListener = new ReadyListener();
         MyProgramBuilder builder = buildRunProgram();
-        File stdoutFile = constructStdoutFilePathname(), stderrFile = constructStderrFilePathname();
+        stdoutFile = constructStdoutFilePathname();
+        stderrFile = constructStderrFilePathname();
         try (final PipedOutputStream devLogOut = new PipedOutputStream()) {
             final CopyingOutputStreamEcho outputPiper = new CopyingOutputStreamEcho(devLogOut);
             ProgramWithOutput<?> program = builder.outputToFilesWithEchos(stdoutFile, stderrFile, outputPiper, null);
@@ -400,4 +403,19 @@ public class DevServerRule extends ExternalResource {
             }
         }
     }
+
+    public void dumpStdout(OutputStream out) throws IOException {
+        dump(stdoutFile, out);
+    }
+
+    public void dumpStderr(OutputStream out) throws IOException {
+        dump(stderrFile, out);
+    }
+
+    private void dump(File outputFile, OutputStream out) throws IOException {
+        if (outputFile != null && outputFile.isFile()) {
+            com.google.common.io.Files.copy(outputFile, out);
+        }
+    }
+
 }

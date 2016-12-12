@@ -22,6 +22,7 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.cookie.BasicClientCookie;
 import org.apache.http.util.EntityUtils;
+import org.junit.AfterClass;
 import org.junit.ClassRule;
 import org.junit.Test;
 
@@ -40,6 +41,16 @@ public class EverythingIT {
 
     @ClassRule
     public static DevServerRule devServer = DevServerRule.withPortsFromProperties("dev.server.port", "dev.admin.port");
+
+    private static boolean dump = false;
+
+    @AfterClass
+    public static void maybeDumpLogs() throws IOException {
+        if (devServer != null && dump) {
+            devServer.dumpStdout(System.out);
+            devServer.dumpStderr(System.out);
+        }
+    }
 
     private static URIBuilder buildUrl() {
         URI url = URI.create("http://localhost:" + devServer.getPort() + "/");
@@ -76,6 +87,9 @@ public class EverythingIT {
             context.setCookieStore(store);
             for (URI url : urls) {
                 try (CloseableHttpResponse response = client.execute(new HttpGet(url), context)) {
+                    if (HttpStatus.SC_OK != response.getStatusLine().getStatusCode()) {
+                        dump = true;
+                    }
                     assertEquals("status for " + url, HttpStatus.SC_OK, response.getStatusLine().getStatusCode());
                     String responseText = EntityUtils.toString(response.getEntity());
                     responses.add(responseText);
