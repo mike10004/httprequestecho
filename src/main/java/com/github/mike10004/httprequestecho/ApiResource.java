@@ -3,24 +3,23 @@ package com.github.mike10004.httprequestecho;
 import javax.servlet.ServletContext;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.ResponseBuilder;
 import javax.ws.rs.core.UriInfo;
-import java.util.HashMap;
 
-@Path("get")
-public class GetResource extends ResourceBase {
+@Path("api")
+public class ApiResource extends ResourceBase {
 
-    public GetResource(@Context ServletContext context) {
+    public ApiResource(@Context ServletContext context) {
         super(context);
     }
 
     @GET
-    @Produces("application/json")
     public Response get(@Context UriInfo uriInfo, @Context HttpHeaders headers) {
-        return echoAsJson(uriInfo, headers, defaultAdditional()).build();
+        ResponseBuilder rb = echoAsJson(uriInfo, headers, defaultAdditional());
+        rb.header(com.google.common.net.HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN, "*");
+        return rb.build();
     }
-
 }

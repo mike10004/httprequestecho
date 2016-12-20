@@ -21,6 +21,7 @@ import javax.ws.rs.core.Response.ResponseBuilder;
 import javax.ws.rs.core.UriInfo;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.UUID;
 
 @Path("cookies")
@@ -72,7 +73,7 @@ public class CookieResource extends ResourceBase {
         Date expiry = createExpiry();
         String domain = uriInfo.getRequestUri().getHost();
         MultivaluedMap<String, String> params = uriInfo.getPathParameters();
-        ResponseBuilder rb = echoAsJson(uriInfo, headers);
+        ResponseBuilder rb = echoAsJson(uriInfo, headers, defaultAdditional());
         if (params.isEmpty()) {
             NewCookie cookie = new NewCookie(COOKIE_NAME, createNewCookieValue(), COOKIE_PATH, domain, COOKIE_VERSION, null, COOKIE_MAX_AGE, expiry, false, true);
             rb.cookie(cookie);

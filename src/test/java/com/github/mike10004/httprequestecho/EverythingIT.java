@@ -2,12 +2,18 @@ package com.github.mike10004.httprequestecho;
 
 import com.github.mike10004.httprequestecho.gae.DevServerRule;
 import com.google.common.base.Function;
+import com.google.common.base.Predicate;
+import com.google.common.base.Predicates;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.common.net.HttpHeaders;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import org.apache.commons.lang3.tuple.Pair;
+import org.apache.http.Header;
+import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.CookieStore;
 import org.apache.http.client.config.CookieSpecs;
@@ -36,6 +42,7 @@ import java.util.List;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 public class EverythingIT {
 
@@ -76,21 +83,56 @@ public class EverythingIT {
     }
 
     private List<String> visit(Iterable<URI> urls) throws IOException {
-        return visit(urls, null);
+        return visitAndCheck(withPredicate(urls, Predicates.alwaysTrue()), null);
+    }
+
+    private String visitAndCheck(URI url, Predicate<? super HttpResponse> responsePredicate) throws IOException {
+        return visitAndCheck(url, responsePredicate, null);
+    }
+
+    private String visitAndCheck(URI url, Predicate<? super HttpResponse> responsePredicate, @Nullable CookieStore store) throws IOException {
+        return visitAndCheck(ImmutableList.of(Pair.<URI, Predicate<? super HttpResponse>>of(url, responsePredicate)), store).get(0);
+    }
+
+    private static <L, R> Iterable<L> lefts(Iterable<? extends Pair<L, R>> pairs) {
+        return Iterables.transform(pairs, new Function<Pair<L, R>, L>() {
+            @Override
+            public L apply(Pair<L, R> input) {
+                return input.getLeft();
+            }
+        });
+    }
+
+    private static Iterable<Pair<URI, Predicate<? super HttpResponse>>> withPredicate(Iterable<URI> uri, final Predicate<? super HttpResponse> predicate) {
+        return Iterables.transform(uri, new Function<URI, Pair<URI, Predicate<? super HttpResponse>>>() {
+            @SuppressWarnings("unchecked")
+            @Override
+            public Pair<URI, Predicate<? super HttpResponse>> apply(URI input) {
+                return (Pair) Pair.of(input, predicate);
+            }
+        });
     }
 
     private List<String> visit(Iterable<URI> urls, @Nullable CookieStore store) throws IOException {
-        System.out.format("%nvisiting %s%n", urls);
+        Iterable<Pair<URI, Predicate<? super HttpResponse>>> urlAndPredicates = withPredicate(urls, Predicates.alwaysTrue());
+        return visitAndCheck(urlAndPredicates, store);
+    }
+
+   private List<String> visitAndCheck(Iterable<Pair<URI, Predicate<? super HttpResponse>>> urlAndPredicates, @Nullable CookieStore store) throws IOException {
+        System.out.format("%nvisiting %s%n", lefts(urlAndPredicates));
         List<String> responses = new ArrayList<>();
         try (CloseableHttpClient client = buildClient()) {
             HttpClientContext context = HttpClientContext.create();
             context.setCookieStore(store);
-            for (URI url : urls) {
+            for (Pair<URI, Predicate<? super HttpResponse>> pair : urlAndPredicates) {
+                URI url = pair.getLeft();
+                Predicate<? super HttpResponse> responsePredicate = pair.getRight();
                 try (CloseableHttpResponse response = client.execute(new HttpGet(url), context)) {
                     if (HttpStatus.SC_OK != response.getStatusLine().getStatusCode()) {
                         dump = true;
                     }
                     assertEquals("status for " + url, HttpStatus.SC_OK, response.getStatusLine().getStatusCode());
+                    assertTrue("responsePredicate " + responsePredicate, responsePredicate.apply(response));
                     String responseText = EntityUtils.toString(response.getEntity());
                     responses.add(responseText);
                 }
@@ -104,7 +146,24 @@ public class EverythingIT {
         System.out.println("get");
         String responseText = visit(buildUrl().setPath("/get").build());
         System.out.format("response:%n%s%n", responseText);
+        JsonObject response = new JsonParser().parse(responseText).getAsJsonObject();
+        JsonElement methodEl = response.get("method");
+        assertNotNull("method property of response", methodEl);
+        assertEquals("response.method == GET", "GET", methodEl.getAsString());
         System.out.println("===============================================================================");
+    }
+
+    @Test
+    public void api() throws Exception {
+        System.out.println("api");
+        Predicate<HttpResponse> containsHeader = new Predicate<HttpResponse>() {
+            @Override
+            public boolean apply(HttpResponse response) {
+                Header h = response.getFirstHeader(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN);
+                return h != null && "*".equals(h.getValue());
+            }
+        };
+        visitAndCheck(buildUrl().setPath("/api").build(), containsHeader);
     }
 
     @Test
