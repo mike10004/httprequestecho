@@ -12,7 +12,6 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <maven-checkstyle-plugin-version>2.17</maven-checkstyle-plugin-version>
-        <httprequestecho.gcloud.directory>/usr/local/share/google/google-cloud-sdk</httprequestecho.gcloud.directory>
         <httprequestecho.gcloud.gcloud_directory>/usr/local/share/google/google-cloud-sdk</httprequestecho.gcloud.gcloud_directory>
         <jersey.version>2.23.2</jersey.version>
     </properties>
@@ -231,7 +230,7 @@
                 <version>2.0.9.111.v20160525</version>
                 <configuration>
                     <promote>true</promote>
-                    <gcloud_directory>${httprequestecho.gcloud.directory}</gcloud_directory>
+                    <gcloud_directory>${httprequestecho.gcloud.gcloud_directory}</gcloud_directory>
                 </configuration>
             </plugin>
             <plugin>
