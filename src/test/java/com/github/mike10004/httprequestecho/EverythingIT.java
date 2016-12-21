@@ -1,11 +1,13 @@
 package com.github.mike10004.httprequestecho;
 
-import com.github.mike10004.httprequestecho.gae.DevServerRule;
+import com.github.mike10004.gaetesting.DevServerRule;
 import com.google.common.base.Function;
 import com.google.common.base.Predicate;
 import com.google.common.base.Predicates;
+import com.google.common.base.Supplier;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
+import com.google.common.net.HostAndPort;
 import com.google.common.net.HttpHeaders;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -31,6 +33,7 @@ import org.apache.http.util.EntityUtils;
 import org.junit.AfterClass;
 import org.junit.ClassRule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
@@ -47,20 +50,30 @@ import static org.junit.Assert.assertTrue;
 public class EverythingIT {
 
     @ClassRule
-    public static DevServerRule devServer = DevServerRule.withPortsFromProperties("dev.server.port", "dev.admin.port");
+    public static TemporaryFolder temporaryFolder = new TemporaryFolder();
 
-    private static boolean dump = false;
+    @ClassRule
+    public static DevServerRule devServer = DevServerRule.factoryBuilder()
+            .withCloudSdkDetector(new Supplier<String>(){
+                @Override
+                public String get() {
+                    return System.getProperty("httprequestecho.gcloud.gcloud_directory");
+                }
+            }).stagingInNewFolder(temporaryFolder)
+            .withHost(hostWithPortFromProperty("dev.server.port"))
+            .withAdminHost(hostWithPortFromProperty("dev.admin.port"))
+            .rule();
 
-    @AfterClass
-    public static void maybeDumpLogs() throws IOException {
-        if (devServer != null && dump) {
-            devServer.dumpStdout(System.out);
-            devServer.dumpStderr(System.out);
+    private static HostAndPort hostWithPortFromProperty(String propertyName) {
+        String pStr = System.getProperty(propertyName);
+        if (pStr != null || !pStr.matches("\\d+")) {
+            return HostAndPort.fromParts("localhost", Integer.parseInt(pStr));
         }
+        throw new IllegalArgumentException("invalid value for property " + propertyName + ": " + pStr);
     }
 
     private static URIBuilder buildUrl() {
-        URI url = URI.create("http://localhost:" + devServer.getPort() + "/");
+        URI url = URI.create("http://" + devServer.getHost() + "/");
         return new URIBuilder(url);
     }
 
@@ -128,9 +141,6 @@ public class EverythingIT {
                 URI url = pair.getLeft();
                 Predicate<? super HttpResponse> responsePredicate = pair.getRight();
                 try (CloseableHttpResponse response = client.execute(new HttpGet(url), context)) {
-                    if (HttpStatus.SC_OK != response.getStatusLine().getStatusCode()) {
-                        dump = true;
-                    }
                     assertEquals("status for " + url, HttpStatus.SC_OK, response.getStatusLine().getStatusCode());
                     assertTrue("responsePredicate " + responsePredicate, responsePredicate.apply(response));
                     String responseText = EntityUtils.toString(response.getEntity());

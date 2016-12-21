@@ -36,6 +36,7 @@ import static org.junit.Assert.assertNotNull;
 
 public class CookieResourceTest {
 
+    @org.junit.Ignore
     @Test
     public void confirmSetCookieHeaderOk() throws Exception {
         org.apache.http.client.protocol.ResponseProcessCookies.class.getName();
