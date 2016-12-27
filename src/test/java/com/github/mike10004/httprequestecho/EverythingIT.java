@@ -4,6 +4,7 @@ import com.github.mike10004.gaetesting.DevServerRule;
 import com.google.common.base.Function;
 import com.google.common.base.Predicate;
 import com.google.common.base.Predicates;
+import com.google.common.base.Strings;
 import com.google.common.base.Supplier;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
@@ -30,7 +31,6 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.cookie.BasicClientCookie;
 import org.apache.http.util.EntityUtils;
-import org.junit.AfterClass;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -60,15 +60,17 @@ public class EverythingIT {
                     return System.getProperty("httprequestecho.gcloud.gcloud_directory");
                 }
             }).stagingInNewFolder(temporaryFolder)
-            .withHost(hostWithPortFromProperty("dev.server.port"))
-            .withAdminHost(hostWithPortFromProperty("dev.admin.port"))
+            .withHost(localhostWithPortFromProperty("dev.server.port"))
+            .withAdminHost(localhostWithPortFromProperty("dev.admin.port"))
             .rule();
 
-    private static HostAndPort hostWithPortFromProperty(String propertyName) {
+    private static HostAndPort localhostWithPortFromProperty(String propertyName) {
         String pStr = System.getProperty(propertyName);
-        if (pStr != null || !pStr.matches("\\d+")) {
-            return HostAndPort.fromParts("localhost", Integer.parseInt(pStr));
+        if (!Strings.isNullOrEmpty(pStr) && pStr.matches("\\d+")) {
+            HostAndPort hostAndPort = HostAndPort.fromParts("localhost", Integer.parseInt(pStr));
+            return hostAndPort;
         }
+        System.err.format("system property '%s' is set to '%s'; must be an unused port number instead%n", propertyName, pStr);
         throw new IllegalArgumentException("invalid value for property " + propertyName + ": " + pStr);
     }
 
