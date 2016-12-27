@@ -30,5 +30,3 @@ before_install:
 # https://docs.travis-ci.com/user/customizing-the-build/#Skipping-the-Installation-Step
 install: true
 script: ./travis.sh
-after_success:
-  - mvn clean cobertura:cobertura coveralls:report
