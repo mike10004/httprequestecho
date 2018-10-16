@@ -10,14 +10,14 @@ _KEY_QUERY = 'queryParameters'
 _KEY_ORIGIN = 'origin'
 
 
-def is_collection(thing):
+def _is_collection(thing):
     return isinstance(thing, Sequence) and not isinstance(thing, (str, bytes, bytearray))
 
 
-def make_multivalued_map(dictlike):
+def _make_multivalued_map(dictlike):
     result = {}
     for k, v in dictlike:
-        if is_collection(v):
+        if _is_collection(v):
             v = list(v)
         else:
             v = [v]
@@ -25,21 +25,21 @@ def make_multivalued_map(dictlike):
     return result
 
 
-def make_response(request):
+def _make_response(request):
     rsp = {}
-    rsp[_KEY_HEADERS] = make_multivalued_map(request.headers)
-    rsp[_KEY_QUERY] = make_multivalued_map(request.args)
+    rsp[_KEY_HEADERS] = _make_multivalued_map(request.headers)
+    rsp[_KEY_QUERY] = _make_multivalued_map(request.args)
     rsp[_KEY_METHOD] = request.method
     return rsp
 
 
-def make_response_json(request):
-    response = make_response(request)
+def _make_response_json(request):
+    response = _make_response(request)
     response_json = json.dumps(response, indent=2)
     return response_json
 
 
-def hello_get(request):
+def http_get(request):
     """HTTP Cloud Function.
     Args:
         request (flask.Request): The request object.
@@ -50,6 +50,10 @@ def hello_get(request):
         <http://flask.pocoo.org/docs/0.12/api/#flask.Flask.make_response>.
     """
     if request.method == 'GET':
-        return make_response_json(request)
+        text = _make_response_json(request)
+        headers = {
+            'content-type': 'application/json'
+        }
+        return (text, 200, headers)
     else:
         return abort(405)

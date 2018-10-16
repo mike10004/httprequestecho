@@ -27,10 +27,10 @@ def app():
     return flask.Flask(__name__)
 
 
-def test_hello_get(app):
+def test_http_get(app):
     with app.test_request_context():
-        res = main.hello_get(flask.request)
-        rsp = json.loads(res)
+        response = main.http_get(flask.request)
+        response_data = json.loads(response[0])
         for key in (_KEY_HEADERS, _KEY_METHOD, _KEY_QUERY):
-            assert key in rsp
+            assert key in response_data
         
